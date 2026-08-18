@@ -4,15 +4,6 @@ A production-grade, distributed email scheduling platform built for the **ReachI
 
 ---
 
-## 📦 Submission Details & Repository Access
-
-- **GitHub Repository**: [https://github.com/tanyaaa0070/eachinbox-scheduler](https://github.com/tanyaaa0070/eachinbox-scheduler)
-- **Collaborators Invited**: `Mitrajit` and `Yadav036`
-
-> **Note on Access**: To grant repository access on GitHub:
-> 1. Go to `https://github.com/tanyaaa0070/eachinbox-scheduler/settings/access`
-> 2. Click **"Add people"**
-> 3. Search and invite `Mitrajit` and `Yadav036` as Collaborators.
 
 ---
 
