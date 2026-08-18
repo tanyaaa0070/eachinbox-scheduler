@@ -64,7 +64,7 @@ export const emailService = {
       // Create ScheduledEmail records with sender rotation if round-robin
       const emailRecords = input.recipients.map((recipient, index) => {
         const assignedSenderId = isRoundRobin
-          ? activeSenders[index % activeSenders.length].id
+          ? (activeSenders[index % activeSenders.length]?.id ?? defaultSenderId)
           : defaultSenderId;
 
         return {

@@ -51,6 +51,7 @@ async function seedDemoData() {
 
   for (let i = 0; i < recipients.length; i++) {
     const r = recipients[i];
+    if (!r) continue;
     const isSent = i < 2;
     await prisma.scheduledEmail.create({
       data: {

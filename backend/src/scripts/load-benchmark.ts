@@ -66,7 +66,7 @@ async function runLoadBenchmark() {
   // Memory info
   const redisInfo = await redis.info('memory');
   const usedMemoryMatch = redisInfo.match(/used_memory_human:(.+)/);
-  const usedMemory = usedMemoryMatch ? usedMemoryMatch[1].trim() : 'N/A';
+  const usedMemory = (usedMemoryMatch && usedMemoryMatch[1]) ? usedMemoryMatch[1].trim() : 'N/A';
 
   console.log('\n📊 ──────────────── BENCHMARK RESULTS ────────────────');
   console.log(`  Total Jobs Injected      : ${TOTAL_JOBS.toLocaleString()}`);
