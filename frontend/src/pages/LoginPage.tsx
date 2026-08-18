@@ -4,7 +4,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { Zap, ShieldCheck, Clock, CheckCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, loginAsDemo } = useAuth();
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex flex-col justify-center items-center p-4 selection:bg-brand-100">
@@ -30,6 +30,21 @@ export const LoginPage: React.FC = () => {
               <p className="text-xs text-slate-400">
                 Continue with your verified Google Workspace or Gmail account
               </p>
+            </div>
+
+            {/* Instant Demo Access Button */}
+            <button
+              onClick={loginAsDemo}
+              className="w-full h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-sm transition duration-150 cursor-pointer"
+            >
+              <Zap className="w-4 h-4 fill-white" />
+              <span>🚀 Launch Live Dashboard (Instant Access)</span>
+            </button>
+
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink mx-3 text-[11px] text-slate-400 font-medium">or continue with OAuth</span>
+              <div className="flex-grow border-t border-slate-200"></div>
             </div>
 
             {/* Google OAuth Button */}

@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.8.0",
+    "@upstash/redis": "^1.38.2",
     "bullmq": "^5.31.0",
     "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",

@@ -7,6 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   loginWithGoogle: () => void;
+  loginAsDemo: () => Promise<void>;
   logout: () => Promise<void>;
   refetchUser: () => Promise<void>;
 }
@@ -37,6 +38,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     window.location.href = '/api/auth/google';
   };
 
+  const loginAsDemo = async () => {
+    try {
+      setIsLoading(true);
+      const demoUser = await api.loginDemo();
+      setUser(demoUser);
+    } catch (err) {
+      console.error('Demo login error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       await api.logout();
@@ -54,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isAuthenticated: !!user,
         loginWithGoogle,
+        loginAsDemo,
         logout,
         refetchUser: fetchUser,
       }}

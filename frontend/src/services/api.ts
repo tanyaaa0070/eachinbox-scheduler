@@ -40,6 +40,9 @@ export const api = {
   async getMe(): Promise<User> {
     return request<User>('/auth/me');
   },
+  async loginDemo(): Promise<User> {
+    return request<User>('/auth/demo', { method: 'POST' });
+  },
   async logout(): Promise<void> {
     return request<void>('/auth/logout', { method: 'POST' });
   },

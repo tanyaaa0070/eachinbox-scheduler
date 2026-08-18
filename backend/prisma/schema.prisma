@@ -40,19 +40,14 @@ model User {
 
   senders   Sender[]
   campaigns EmailCampaign[]
-  sessions  Session[]
 }
 
 model Session {
-  id        String   @id
-  sid       String   @unique
-  data      String
-  expiresAt DateTime
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
 
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
-
-  @@index([expiresAt])
+  @@index([expire], map: "IDX_session_expire")
 }
 
 model Sender {

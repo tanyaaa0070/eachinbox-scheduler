@@ -40,7 +40,7 @@ export function createApp() {
     store: new PgSession({
       conString: env.DATABASE_URL,
       tableName: 'Session',
-      createTableIfMissing: false, // Managed by Prisma migrations
+      createTableIfMissing: true,
       schemaName: 'public',
       pruneSessionInterval: 60 * 15, // Prune every 15 min
     }),
