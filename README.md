@@ -4,10 +4,7 @@ A production-grade, distributed email scheduling platform built for the **ReachI
 
 ---
 
-
----
-
-## 🌟 Top 1% Standout Features Matrix
+## 🌟 Features Overview
 
 ### ⚙️ Backend & Distributed Architecture
 | Feature | Implementation | Details |
