@@ -1,8 +1,9 @@
+import 'dotenv/config';
 import IORedis from 'ioredis';
 
 async function test() {
-  const url = 'rediss://default:gQAAAAAAAa7kAAIgcDFkMGQ2ZmVkZTk5MDU0NzYyYWFmZDI5MWU4OTUyMzU5OQ@grateful-perch-110308.upstash.io:6379';
-  console.log("Connecting to:", url.replace(/default:[^@]+@/, "default:***@"));
+  const url = process.env.REDIS_URL || 'redis://localhost:6379';
+  console.log("Connecting to Redis...");
   const redis = new IORedis(url, { maxRetriesPerRequest: null, connectTimeout: 5000 });
   
   try {

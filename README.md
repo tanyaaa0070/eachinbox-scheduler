@@ -148,13 +148,18 @@ cd backend
 ```
 
 #### Environment Variables (`backend/.env`):
-The repository contains a working `.env` connected to Neon PostgreSQL, Upstash Redis, and Ethereal SMTP:
-```env
-# Database (Neon PostgreSQL)
-DATABASE_URL="postgresql://neondb_owner:npg_1DywzdC8kNYX@ep-super-sound-ayboxlad.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require"
+Copy the example env file and fill in your own credentials:
+```bash
+cp .env.example .env
+```
 
-# Redis (Upstash Redis TLS)
-REDIS_URL="rediss://default:gQAAAAAAAa7kAAIgcDFkMGQ2ZmVkZTk5MDU0NzYyYWFmZDI5MWU4OTUyMzU5OQ@grateful-perch-110308.upstash.io:6379"
+Example `.env` structure:
+```env
+# Database (PostgreSQL — use Neon, Supabase, or local Docker)
+DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require"
+
+# Redis (use Upstash, or local Docker redis://localhost:6379)
+REDIS_URL="rediss://default:your_token@your-host.upstash.io:6379"
 
 # Google OAuth 2.0
 GOOGLE_CLIENT_ID="your_google_client_id"
@@ -162,13 +167,13 @@ GOOGLE_CLIENT_SECRET="your_google_client_secret"
 GOOGLE_CALLBACK_URL="http://localhost:3001/api/auth/google/callback"
 
 # Session & Security
-SESSION_SECRET="reachinbox_super_secret_session_key_64_characters_long_for_security_12345"
+SESSION_SECRET="generate_a_random_64_char_string_here"
 
-# Ethereal Test SMTP
+# Ethereal Test SMTP (run `npm run setup:ethereal` to auto-generate)
 ETHEREAL_HOST="smtp.ethereal.email"
 ETHEREAL_PORT=587
-ETHEREAL_USER="wuhgbn6tx2ls45yu@ethereal.email"
-ETHEREAL_PASSWORD="Rb7uG7FbDRknx1bwnr"
+ETHEREAL_USER="generated_user@ethereal.email"
+ETHEREAL_PASSWORD="generated_password"
 
 # Worker Parameters
 WORKER_CONCURRENCY=5
