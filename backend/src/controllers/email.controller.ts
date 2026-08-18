@@ -111,4 +111,71 @@ export const emailController = {
       next(error);
     }
   },
+
+  /**
+   * Retry single failed email.
+   * POST /api/emails/:id/retry
+   */
+  async retry(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params['id'] as string;
+      const result = await emailService.retryEmail(id, req.user!.id);
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Retry all failed emails.
+   * POST /api/emails/retry-all-failed
+   */
+  async retryAllFailed(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await emailService.retryAllFailed(req.user!.id);
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Public tracking pixel endpoint.
+   * GET /api/emails/track/open/:id
+   */
+  async trackOpen(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params['id'] as string;
+      await emailService.trackOpen(id);
+
+      // Return 1x1 transparent GIF
+      const transparentPixel = Buffer.from(
+        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        'base64'
+      );
+      res.writeHead(200, {
+        'Content-Type': 'image/gif',
+        'Content-Length': transparentPixel.length,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      });
+      res.end(transparentPixel);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Public link click tracking redirect.
+   * GET /api/emails/track/click/:id
+   */
+  async trackClick(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params['id'] as string;
+      const targetUrl = (req.query['url'] as string) || 'https://reachinbox.ai';
+      await emailService.trackClick(id, targetUrl);
+      res.redirect(targetUrl);
+    } catch (error) {
+      next(error);
+    }
+  },
 };

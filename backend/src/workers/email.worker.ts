@@ -46,6 +46,7 @@ import { campaignRepository } from '../repositories/campaign.repository';
 import { EMAIL_QUEUE_NAME, emailQueue } from '../queues/email.queue';
 import { EmailJobData } from '../types';
 import { EmailStatus } from '@prisma/client';
+import { appEvents } from '../lib/events';
 
 // Load env with defaults for worker process
 const WORKER_CONCURRENCY = parseInt(process.env['WORKER_CONCURRENCY'] ?? '5', 10);
@@ -87,6 +88,15 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
     return;
   }
 
+  appEvents.emit('email:event', {
+    type: 'PROCESSING',
+    emailId: email.id,
+    recipient: email.recipient,
+    senderEmail: email.sender.email,
+    subject: email.subject,
+    timestamp: new Date().toISOString(),
+  });
+
   // ── Step 4: Rate limit check ──
   const rateCheck = await rateLimitService.checkAndIncrement(
     email.senderId,
@@ -102,6 +112,15 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
 
     // Mark as rate limited
     await emailRepository.markRateLimited(email.id);
+
+    appEvents.emit('email:event', {
+      type: 'RATE_LIMITED',
+      emailId: email.id,
+      recipient: email.recipient,
+      senderEmail: email.sender.email,
+      retryAfterMs: rateCheck.retryAfterMs,
+      timestamp: new Date().toISOString(),
+    });
 
     // Move job to delayed state
     await job.moveToDelayed(Date.now() + rateCheck.retryAfterMs, job.token);
@@ -129,6 +148,16 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
     // ── Step 6: Mark as SENT in PostgreSQL ──
     await emailRepository.markSent(email.id, result.messageId, result.previewUrl);
 
+    appEvents.emit('email:event', {
+      type: 'SENT',
+      emailId: email.id,
+      recipient: email.recipient,
+      senderEmail: email.sender.email,
+      subject: email.subject,
+      previewUrl: result.previewUrl,
+      timestamp: new Date().toISOString(),
+    });
+
     logger.info(
       {
         emailId: email.id,
@@ -145,6 +174,14 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const attempts = (email.attempts ?? 0) + 1;
+
+    appEvents.emit('email:event', {
+      type: 'FAILED',
+      emailId: email.id,
+      recipient: email.recipient,
+      errorMessage,
+      timestamp: new Date().toISOString(),
+    });
 
     logger.error(
       { emailId: email.id, error: errorMessage, attempts },

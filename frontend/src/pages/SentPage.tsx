@@ -10,7 +10,18 @@ import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { LoadingState } from '../components/ui/LoadingState';
 import { formatDate } from '../utils/date';
-import { Send, ExternalLink, RefreshCw, Plus, CheckCircle2 } from 'lucide-react';
+import { 
+  Send, 
+  ExternalLink, 
+  RefreshCw, 
+  Plus, 
+  CheckCircle2, 
+  Eye, 
+  MousePointerClick, 
+  Copy, 
+  Check 
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 interface SentContext {
   onToggleDevTools: () => void;
@@ -21,6 +32,7 @@ export const SentPage: React.FC = () => {
   const navigate = useNavigate();
   const { onToggleDevTools, onOpenShortcuts } = useOutletContext<SentContext>();
   const [search, setSearch] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Fetch sent emails with live polling
   const { data, isLoading, isFetching, refetch } = useQuery({
@@ -31,11 +43,18 @@ export const SentPage: React.FC = () => {
 
   const emails = data?.items || [];
 
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <Header
-        title="Sent Emails"
-        description="Completed email deliveries dispatched via Ethereal SMTP."
+        title="Sent Emails & Dispatch Audit"
+        description="Authoritative delivery log dispatched via Ethereal SMTP with open & click telemetry."
         searchValue={search}
         onSearchChange={setSearch}
         onOpenShortcuts={onOpenShortcuts}
@@ -78,6 +97,7 @@ export const SentPage: React.FC = () => {
                     <TableHead>Subject</TableHead>
                     <TableHead>Sender Account</TableHead>
                     <TableHead>Delivered At</TableHead>
+                    <TableHead>Engagement</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ethereal Preview</TableHead>
                   </TableRow>
@@ -86,9 +106,22 @@ export const SentPage: React.FC = () => {
                   {emails.map((email) => (
                     <TableRow key={email.id}>
                       <TableCell className="font-medium text-slate-900">
-                        {email.recipient}
+                        <div className="flex items-center gap-1.5">
+                          <span>{email.recipient}</span>
+                          <button
+                            onClick={() => handleCopy(email.recipient, `rec-${email.id}`)}
+                            className="text-slate-300 hover:text-slate-600 transition"
+                            title="Copy email"
+                          >
+                            {copiedId === `rec-${email.id}` ? (
+                              <Check className="w-3 h-3 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-slate-600">
+                      <TableCell className="max-w-[220px] truncate text-slate-600 font-normal">
                         {email.subject}
                       </TableCell>
                       <TableCell className="text-xs text-slate-600">
@@ -96,6 +129,27 @@ export const SentPage: React.FC = () => {
                       </TableCell>
                       <TableCell className="text-xs text-slate-600 whitespace-nowrap">
                         {formatDate(email.sentAt)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
+                              email.openedAt
+                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                : 'bg-slate-50 text-slate-400 border-slate-200'
+                            }`}
+                            title={email.openedAt ? `Opened at ${new Date(email.openedAt).toLocaleTimeString()}` : 'Not opened yet'}
+                          >
+                            <Eye className="w-3 h-3" />
+                            {email.openedAt ? 'Opened' : 'Unopened'}
+                          </span>
+                          {email.clickedAt && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                              <MousePointerClick className="w-3 h-3" />
+                              Clicked
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge status={email.status} size="sm" />

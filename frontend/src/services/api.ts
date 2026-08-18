@@ -97,6 +97,12 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+  async retryEmail(id: string): Promise<{ success: boolean; jobId: string }> {
+    return request<{ success: boolean; jobId: string }>(`/emails/${id}/retry`, { method: 'POST' });
+  },
+  async retryAllFailed(): Promise<{ retriedCount: number; totalFailed: number }> {
+    return request<{ retriedCount: number; totalFailed: number }>('/emails/retry-all-failed', { method: 'POST' });
+  },
   async previewSchedule(data: {
     totalRecipients: number;
     startTime: string;

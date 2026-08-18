@@ -13,6 +13,7 @@ import emailRoutes from './routes/email.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import campaignRoutes from './routes/campaign.routes';
 import senderRoutes from './routes/sender.routes';
+import docsRoutes from './routes/docs.routes';
 
 export function createApp() {
   const app = express();
@@ -71,6 +72,7 @@ export function createApp() {
   app.use('/api/dashboard', dashboardRoutes);
   app.use('/api/campaigns', campaignRoutes);
   app.use('/api/senders', senderRoutes);
+  app.use('/api/docs', docsRoutes);
 
   // ── Error handler (must be last) ──
   app.use(errorHandler);

@@ -47,6 +47,8 @@ export interface ScheduledEmail {
   messageId: string | null;
   previewUrl: string | null;
   sequenceNumber: number;
+  openedAt?: string | null;
+  clickedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   sender?: {

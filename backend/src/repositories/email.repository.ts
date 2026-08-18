@@ -186,4 +186,36 @@ export const emailRepository = {
       },
     });
   },
+
+  async markOpened(id: string) {
+    try {
+      return await prisma.scheduledEmail.update({
+        where: { id },
+        data: { openedAt: new Date() },
+      });
+    } catch {
+      return null;
+    }
+  },
+
+  async markClicked(id: string) {
+    try {
+      return await prisma.scheduledEmail.update({
+        where: { id },
+        data: { clickedAt: new Date() },
+      });
+    } catch {
+      return null;
+    }
+  },
+
+  async findFailed(userId: string) {
+    return prisma.scheduledEmail.findMany({
+      where: {
+        campaign: { userId },
+        status: EmailStatus.FAILED,
+      },
+      include: { campaign: true, sender: true },
+    });
+  },
 };

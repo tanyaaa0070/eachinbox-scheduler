@@ -13,6 +13,7 @@ import { Select } from '../components/ui/Select';
 import { CsvImportModal } from '../components/compose/CsvImportModal';
 import { EmailPreviewTab } from '../components/compose/EmailPreviewTab';
 import { SchedulePreviewCard } from '../components/compose/SchedulePreviewCard';
+import { AiDeliverabilityHelper } from '../components/compose/AiDeliverabilityHelper';
 import { getUserTimezone } from '../utils/date';
 import { toast } from 'sonner';
 import { 
@@ -394,6 +395,17 @@ export const ComposePage: React.FC = () => {
                   />
                 )}
               </div>
+
+              {/* AI Cold Email Deliverability, Spintax & Personalization Assistant */}
+              <AiDeliverabilityHelper
+                subject={watchedSubject || ''}
+                body={watchedBody || ''}
+                onSubjectChange={(newSubject) => setValue('subject', newSubject, { shouldValidate: true })}
+                onBodyInsert={(textToInsert) => {
+                  const currentBody = watch('body') || '';
+                  setValue('body', currentBody ? `${currentBody}\n${textToInsert}` : textToInsert, { shouldValidate: true });
+                }}
+              />
 
               {/* Start Date, Time & Timezone Scheduling */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">

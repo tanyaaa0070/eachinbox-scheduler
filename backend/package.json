@@ -16,6 +16,8 @@
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:chaos": "tsx src/scripts/chaos-worker-restart.ts",
+    "benchmark:load": "tsx src/scripts/load-benchmark.ts",
     "lint": "eslint src --ext .ts",
     "setup:ethereal": "tsx src/scripts/setup-ethereal.ts"
   },

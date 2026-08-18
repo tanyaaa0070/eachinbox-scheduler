@@ -110,6 +110,8 @@ model ScheduledEmail {
   bullJobId      String?
   idempotencyKey String      @unique
   sequenceNumber Int
+  openedAt       DateTime?
+  clickedAt      DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

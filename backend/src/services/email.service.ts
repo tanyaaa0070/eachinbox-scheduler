@@ -7,23 +7,35 @@ import { logger } from '../config/logger';
 import { ScheduleEmailsInput } from '../schemas/email.schema';
 import { EmailJobData } from '../types';
 import { EmailStatus } from '@prisma/client';
+import { appEvents } from '../lib/events';
 
 export const emailService = {
   /**
    * Schedule a batch of emails as a campaign.
    *
-   * 1. Validates sender belongs to user
-   * 2. Creates campaign record
-   * 3. Creates ScheduledEmail records in bulk
-   * 4. Creates BullMQ delayed jobs for each email
-   * 5. Stores bullJobId back on each record
-   *
-   * All database operations are wrapped in a transaction.
+   * Supports:
+   * 1. Specific sender mailbox
+   * 2. "round-robin" rotation across all active mailboxes of user
+   * 3. BullMQ delayed jobs per recipient
+   * 4. Crash-resistant Redis AOF + PostgreSQL persistence
    */
   async scheduleEmails(userId: string, input: ScheduleEmailsInput) {
-    const sender = await senderRepository.findById(input.senderId);
-    if (!sender || sender.userId !== userId) {
-      throw Object.assign(new Error('Sender not found or not owned by user'), { statusCode: 404 });
+    const userSenders = await senderRepository.findByUserId(userId);
+    const activeSenders = userSenders.filter((s) => s.isActive);
+
+    if (activeSenders.length === 0) {
+      throw Object.assign(new Error('No active senders available for this user'), { statusCode: 400 });
+    }
+
+    let defaultSenderId = input.senderId;
+    const isRoundRobin = input.senderId === 'round-robin' || !userSenders.some((s) => s.id === input.senderId);
+
+    if (!isRoundRobin) {
+      const found = activeSenders.find((s) => s.id === input.senderId);
+      if (!found) {
+        throw Object.assign(new Error('Specified sender not found or not active'), { statusCode: 404 });
+      }
+      defaultSenderId = found.id;
     }
 
     const startTime = new Date(input.startTime);
@@ -49,17 +61,23 @@ export const emailService = {
         },
       });
 
-      // Create ScheduledEmail records
-      const emailRecords = input.recipients.map((recipient, index) => ({
-        campaignId: campaign.id,
-        senderId: input.senderId,
-        recipient,
-        subject: input.subject,
-        body: input.body,
-        scheduledAt: new Date(startTime.getTime() + index * input.delayBetweenEmails * 1000),
-        idempotencyKey: `${campaign.id}:${recipient}:${index}`,
-        sequenceNumber: index,
-      }));
+      // Create ScheduledEmail records with sender rotation if round-robin
+      const emailRecords = input.recipients.map((recipient, index) => {
+        const assignedSenderId = isRoundRobin
+          ? activeSenders[index % activeSenders.length].id
+          : defaultSenderId;
+
+        return {
+          campaignId: campaign.id,
+          senderId: assignedSenderId,
+          recipient,
+          subject: input.subject,
+          body: input.body,
+          scheduledAt: new Date(startTime.getTime() + index * input.delayBetweenEmails * 1000),
+          idempotencyKey: `${campaign.id}:${recipient}:${index}`,
+          sequenceNumber: index,
+        };
+      });
 
       await tx.scheduledEmail.createMany({ data: emailRecords });
 
@@ -228,5 +246,115 @@ export const emailService = {
       estimatedCompletionMinutes: Math.round(estimatedCompletionMinutes),
       estimatedCompletionTime: estimatedEnd.toISOString(),
     };
+  },
+
+  /**
+   * Dead-Letter Queue (DLQ): Retry a single failed email.
+   */
+  async retryEmail(emailId: string, userId: string) {
+    const email = await emailRepository.findById(emailId);
+    if (!email || email.campaign.userId !== userId) {
+      throw Object.assign(new Error('Email not found or access denied'), { statusCode: 404 });
+    }
+
+    if (email.status !== EmailStatus.FAILED) {
+      throw Object.assign(new Error('Only FAILED emails can be retried'), { statusCode: 400 });
+    }
+
+    // Reset status in PostgreSQL
+    await emailRepository.updateStatus(emailId, EmailStatus.SCHEDULED, {
+      errorMessage: undefined,
+      attempts: 0,
+    });
+
+    // Re-enqueue in BullMQ immediately
+    const jobData: EmailJobData = {
+      emailId: email.id,
+      campaignId: email.campaignId,
+      senderId: email.senderId,
+      recipient: email.recipient,
+      subject: email.subject,
+      body: email.body,
+      idempotencyKey: `${email.idempotencyKey}:retry:${Date.now()}`,
+    };
+
+    const job = await emailQueue.add('send-email', jobData, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 3000 },
+    });
+
+    await prisma.scheduledEmail.update({
+      where: { id: emailId },
+      data: { bullJobId: job.id },
+    });
+
+    appEvents.emit('email:event', {
+      type: 'RETRY',
+      emailId: email.id,
+      recipient: email.recipient,
+      subject: email.subject,
+      timestamp: new Date().toISOString(),
+    });
+
+    logger.info({ emailId, newJobId: job.id }, 'Email manually retried from DLQ');
+    return { success: true, jobId: job.id };
+  },
+
+  /**
+   * Dead-Letter Queue (DLQ): Replay all failed emails for a user.
+   */
+  async retryAllFailed(userId: string) {
+    const failedEmails = await emailRepository.findFailed(userId);
+    if (failedEmails.length === 0) {
+      return { retriedCount: 0, message: 'No failed emails to retry' };
+    }
+
+    let retriedCount = 0;
+    for (const email of failedEmails) {
+      try {
+        await this.retryEmail(email.id, userId);
+        retriedCount++;
+      } catch (err) {
+        logger.error({ emailId: email.id, err }, 'Failed to retry email from DLQ');
+      }
+    }
+
+    return { retriedCount, totalFailed: failedEmails.length };
+  },
+
+  /**
+   * Track email open via 1x1 invisible pixel.
+   */
+  async trackOpen(emailId: string) {
+    const email = await emailRepository.markOpened(emailId);
+    if (email) {
+      appEvents.emit('email:event', {
+        type: 'OPENED',
+        emailId: email.id,
+        recipient: email.recipient,
+        subject: email.subject,
+        timestamp: new Date().toISOString(),
+      });
+      logger.info({ emailId }, 'Email open tracked');
+    }
+    return email;
+  },
+
+  /**
+   * Track link click and return destination URL.
+   */
+  async trackClick(emailId: string, targetUrl: string) {
+    const email = await emailRepository.markClicked(emailId);
+    if (email) {
+      appEvents.emit('email:event', {
+        type: 'CLICKED',
+        emailId: email.id,
+        recipient: email.recipient,
+        subject: email.subject,
+        timestamp: new Date().toISOString(),
+      });
+      logger.info({ emailId, targetUrl }, 'Email link click tracked');
+    }
+    return targetUrl;
   },
 };

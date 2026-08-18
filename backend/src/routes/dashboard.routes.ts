@@ -4,6 +4,9 @@ import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// Live SSE Stream (Supports session auth cookie)
+router.get('/live-stream', dashboardController.getLiveStream);
+
 router.use(requireAuth);
 
 router.get('/stats', dashboardController.getStats);
