@@ -1,21 +1,48 @@
 # ReachInbox Scheduler — Distributed Email Dispatch Engine
 
-A production-grade, distributed email scheduling platform built for ReachInbox.ai / Outbox Labs. Engineered from the ground up with **BullMQ delayed jobs**, **Redis sliding window rate limiting**, **PostgreSQL authoritative state storage**, and **atomic idempotency guarantees**.
+A production-grade, distributed email scheduling platform built for the **ReachInbox.ai** Engineering Assignment. Engineered with **BullMQ delayed jobs**, **Redis sliding window rate limiting (Lua)**, **PostgreSQL authoritative state storage**, **zero-loss crash persistence**, and a **polished SaaS UI inspired by ReachInbox's Figma design**.
 
 ---
 
-## 🌟 5 Core Differentiators
+## 📦 Submission Details & Repository Access
 
-1. **CSV Intelligence & Automated Sanitization:**
-   Client-side CSV & TXT parsing with automated email column detection, RFC validation, and duplicate removal tracking before queue submission.
-2. **Dynamic Schedule Preview Calculator:**
-   Real-time completion estimator factoring in both sequential inter-email delays ($N \times \text{delay}$) and hourly rate-limit windows ($\lceil N / \text{limit} \rceil \text{ hours}$).
-3. **Live Queue Health & Rate Limit Utilization Widgets:**
-   Real-time telemetry showing live BullMQ delayed/active/completed/failed job states and Redis sliding hourly quotas per sender.
-4. **Idempotency & Restart Crash Persistence:**
-   Deterministic `campaignId:recipient:sequenceNumber` keys with optimistic locking. Scheduled jobs survive backend/worker restarts without duplicate sends.
-5. **Polished SaaS UI Inspired by ReachInbox Figma:**
-   Refined white/slate theme with ReachInbox green accents, keyboard shortcuts (`C`, `G S`, `G T`, `?`), timeline pipeline visualization, and developer queue inspector.
+- **GitHub Repository**: [https://github.com/tanyaaa0070/eachinbox-scheduler](https://github.com/tanyaaa0070/eachinbox-scheduler)
+- **Collaborators Invited**: `Mitrajit` and `Yadav036`
+
+> **Note on Access**: To grant repository access on GitHub:
+> 1. Go to `https://github.com/tanyaaa0070/eachinbox-scheduler/settings/access`
+> 2. Click **"Add people"**
+> 3. Search and invite `Mitrajit` and `Yadav036` as Collaborators.
+
+---
+
+## 🌟 Implemented Features Matrix
+
+### ⚙️ Backend Features
+| Feature | Implementation | Details |
+|---|---|---|
+| **Distributed Scheduler** | BullMQ + Redis Delayed Jobs | Jobs scheduled at exact timestamps (`scheduledAt - now`); sequential delays enforced across campaign recipients. |
+| **Crash-Proof Persistence** | Redis AOF + PostgreSQL Authoritative Store | Pending timers survive full backend/worker restarts. Jobs are persistent in Redis sorted sets. |
+| **Sliding Rate Limiter** | Redis Lua Script (`ratelimit:sender:{id}:hour:{YYYY-MM-DD-HH}`) | Atomic sliding hourly quotas per sender. If quota is exceeded, jobs are delayed to the start of the next hour window without data loss. |
+| **Worker Concurrency** | BullMQ Worker Pool (`WORKER_CONCURRENCY=5`) | High-throughput concurrent email dispatching without blocking the Express API server. |
+| **Idempotency Safeguard** | `idempotencyKey = campaignId:recipient:seq` + Optimistic Locking | Deterministic keys with `UNIQUE` index constraint prevent duplicate email dispatches during retries. |
+| **Ethereal SMTP Integration** | Nodemailer with Auto-Account Generation | Real email dispatch in staging/demo with generated web preview URLs (`previewUrl`). |
+| **Authentication & Sessions** | PostgreSQL-backed Sessions (`connect-pg-simple`) | Dual login support: **Google OAuth 2.0** and **1-Click Instant Demo Login**. |
+
+### 💻 Frontend Features
+| Feature | Component / Page | Details |
+|---|---|---|
+| **Dual Authentication** | `/login` | Google Workspace/Gmail OAuth 2.0 login + **1-Click Instant Demo Login** for evaluation. |
+| **Live Telemetry Dashboard** | `/dashboard` | Real-time BullMQ queue health indicators (waiting, active, delayed, completed), sender rate limit gauges, and dispatch metrics. |
+| **Smart Email Composer** | `/schedule` | Multi-step composer with template tags (`{{name}}`, `{{company}}`), custom start times, delay slider, and sender limits. |
+| **CSV Intelligence Parser** | `/schedule` Modal | Client-side CSV/TXT parsing with auto header detection, RFC validation, and duplicate lead elimination. |
+| **Schedule Preview Calculator**| `/schedule` Preview Tab | Dynamic completion time calculation factoring in sequential delays and hourly quota windows. |
+| **Scheduled Emails Queue** | `/scheduled` | Paginated queue with live countdown timers, sequence numbers, and manual cancel actions. |
+| **Sent Emails & Mail Inspector**| `/sent` | Sent email history with direct links to live **Ethereal Web Preview** URLs. |
+| **Campaigns Manager** | `/campaigns` | Overview of all active, scheduled, and completed drip campaigns with real-time progress bars. |
+| **Senders & SMTP Config** | `/senders` | Connected SMTP mailboxes, active toggles, hourly limit sliders, and connection diagnostics. |
+| **DevTools Queue Inspector** | Global Drawer (<kbd>Terminal</kbd>) | Interactive real-time inspect tool showing raw BullMQ delayed queues and Redis rate limit keys. |
+| **Keyboard Shortcuts** | Global Modal (<kbd>?</kbd>) | Keyboard navigation: <kbd>C</kbd> (Compose), <kbd>G</kbd> <kbd>S</kbd> (Scheduled), <kbd>G</kbd> <kbd>T</kbd> (Sent), <kbd>G</kbd> <kbd>D</kbd> (Dashboard). |
 
 ---
 
@@ -23,29 +50,29 @@ A production-grade, distributed email scheduling platform built for ReachInbox.a
 
 ```mermaid
 graph TB
-    subgraph Client ["Frontend (React + Vite + Tailwind + TanStack Query)"]
-        UI[ReachInbox Modern UI]
+    subgraph Client ["Frontend (React + Vite + Tailwind + Lucide Icons)"]
+        UI[ReachInbox UI]
         DevTools[Queue Inspector Drawer]
         CSV[CSV Intelligence Parser]
     end
 
     subgraph API_Layer ["API Server (Express + TypeScript)"]
         Routes[REST API Endpoints]
-        Passport[Google OAuth 2.0]
+        Passport[Google OAuth 2.0 & Demo Auth]
         SessionStore[PostgreSQL Session Store]
         QueueProducer[BullMQ Queue Producer]
     end
 
-    subgraph Background_Worker ["Worker Process (Separate Node.js Process)"]
+    subgraph Background_Worker ["Worker Process (Isolated Node.js Process)"]
         BullWorker[BullMQ Worker Pool]
-        Idempotency[Idempotency & Optimistic Lock]
+        Idempotency[Idempotency & Optimistic Locking]
         LuaRateLimiter[Redis Lua Atomic Rate Limiter]
-        SMTPTransporter[Nodemailer Transporter Pool]
+        SMTPTransporter[Nodemailer Pool]
     end
 
     subgraph Storage_Tiers ["Data & Cache Infrastructure"]
-        PostgreSQL[(PostgreSQL 16\nAuthoritative State)]
-        Redis[(Redis 7\nAOF Delayed Queue & Rate Limits)]
+        PostgreSQL[(PostgreSQL / Neon DB\nAuthoritative Persistence)]
+        Redis[(Redis / Upstash Redis\nAOF Delayed Queue & Rate Limits)]
         Ethereal[Ethereal SMTP Server\nTest Mailbox & Preview URLs]
     end
 
@@ -55,239 +82,184 @@ graph TB
     Routes -->|Add Delayed Jobs| QueueProducer
     QueueProducer --> Redis
 
-    BullWorker -->|Pop Due Jobs| Redis
+    BullWorker -->|Pop Due Delayed Jobs| Redis
     BullWorker -->|Check & Lock Status| Idempotency
     Idempotency --> PostgreSQL
     BullWorker -->|Check Hourly Limit| LuaRateLimiter
     LuaRateLimiter --> Redis
-    BullWorker -->|Dispatch Mail| SMTPTransporter
+    BullWorker -->|Dispatch Email| SMTPTransporter
     SMTPTransporter --> Ethereal
     BullWorker -->|Record SENT + Preview URL| PostgreSQL
-    DevTools -.->|Live Polling| Routes
+    DevTools -.->|Live Telemetry| Routes
 ```
 
 ---
 
-## 🔁 Scheduling & Dispatch Lifecycle
+## 🔁 Scheduling, Persistence & Rate Limiting Lifecycle
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User
     participant Frontend
-    participant API as Express API
-    participant DB as PostgreSQL
-    participant Redis as Redis / BullMQ
-    participant Worker as BullMQ Worker
+    participant API as Express API Server
+    participant DB as PostgreSQL (Neon DB)
+    participant Redis as Redis / BullMQ (Upstash)
+    participant Worker as BullMQ Worker Process
     participant SMTP as Ethereal SMTP
 
-    User->>Frontend: Upload CSV & Configure Start Time, Delay, Limit
+    User->>Frontend: Upload CSV, set Start Time, Delay (e.g. 2s), Hourly Limit (50)
     Frontend->>API: POST /api/emails/schedule
-    API->>DB: INSERT Campaign + ScheduledEmail (Status: SCHEDULED)
+    API->>DB: INSERT Campaign & ScheduledEmail records (Status: SCHEDULED)
     API->>Redis: Bulk Add BullMQ Delayed Jobs (delay = scheduledAt - now)
     API-->>Frontend: 201 Created (Campaign ID)
 
-    Note over Redis,Worker: Time passes until scheduledAt...
+    Note over Redis,Worker: Time passes until scheduledAt timestamp is reached...
 
     Worker->>Redis: Job becomes due (Moved from Delayed to Waiting)
-    Worker->>DB: Idempotency Check & Mark Status: PROCESSING
-    Worker->>Redis: Execute Lua Script: Check & Increment Sender Hourly Window
+    Worker->>DB: Check Status & Optimistic Lock (Mark PROCESSING)
+    Worker->>Redis: Execute Lua Script: Check & Increment Sender Hourly Quota
     alt Rate Limit Exceeded
-        Worker->>Redis: moveToDelayed(next_hour_window)
+        Worker->>Redis: job.moveToDelayed(next_hour_window_timestamp)
         Worker->>DB: Update Status: RATE_LIMITED
-    else Limit Allowed
+    else Rate Limit OK
         Worker->>SMTP: transporter.sendMail(...)
-        SMTP-->>Worker: messageId & Preview URL
+        SMTP-->>Worker: messageId & Web Preview URL
         Worker->>DB: Update Status: SENT + messageId + previewUrl
-        Worker->>DB: Refresh EmailCampaign Progress
+        Worker->>DB: Update Campaign Progress
     end
 ```
 
 ---
 
-## 🔒 Idempotency Strategy & Distributed Boundary Analysis
+## 🚀 How to Run the Application
 
-### Idempotency Key Architecture
-Each scheduled email is assigned a deterministic unique idempotency key:
-$$\text{idempotencyKey} = \text{campaignId} + \text{":"} + \text{recipient} + \text{":"} + \text{sequenceNumber}$$
-
-This key is enforced with a `UNIQUE` index constraint in PostgreSQL and used as BullMQ's `jobId`.
-
-### Worker Processing Guardrails
-1. **Status Pre-check:** Before invoking SMTP, the worker queries PostgreSQL. If the email status is already `SENT`, the job immediately acknowledges and terminates.
-2. **Optimistic Database Locking:** The worker atomically transitions status from `SCHEDULED` $\rightarrow$ `PROCESSING` using an update query with status condition checks. If another worker already acquired the lock, the current worker skips execution.
-3. **Post-Dispatch Persistence:** Upon receiving SMTP delivery confirmation, PostgreSQL is updated to `SENT` along with the Ethereal preview URL.
-
-### ⚠️ Distributed Boundary Window (Honest Technical Trade-off)
-In distributed systems without two-phase commit (2PC) or an external SMTP transaction coordinator, there exists an unavoidable millisecond window between:
-1. *SMTP server successfully accepts the message payload*, and
-2. *PostgreSQL writes the status change to `SENT`*.
-
-If a hard server crash/SIGKILL occurs inside this exact window, the database will retain `PROCESSING`. Upon worker restart, the crash recovery mechanism safely identifies stale `PROCESSING` records and re-evaluates them. We deliberately term this **"Effectively-Once Delivery with Idempotency Safeguards"** rather than claiming impossible pure "exactly-once" delivery over uncoordinated network protocols.
+### 1. Prerequisites
+- **Node.js 20+** & **npm**
+- **Cloud Databases** (Neon PostgreSQL & Upstash Redis credentials already pre-configured in `.env`), OR local Docker services (`docker compose up -d`).
 
 ---
 
-## ⏱️ Redis Atomic Sliding Rate Limiting (Lua Script)
+### 2. Backend & Worker Setup
 
-To prevent multiple concurrent worker processes from exceeding a sender's configured hourly limit (e.g. 50 emails/hour), rate limiting is executed directly inside Redis using an atomic Lua script:
-
-```lua
-local key = KEYS[1]
-local limit = tonumber(ARGV[1])
-local ttl = tonumber(ARGV[2])
-
-local current = redis.call("INCR", key)
-
-if current == 1 then
-  redis.call("EXPIRE", key, ttl)
-end
-
-return current
-```
-
-- **Key Format:** `ratelimit:sender:{senderId}:hour:{YYYY-MM-DD-HH}`
-- **Behavior on Limit Hit:** Rather than failing the email, the worker computes the millisecond offset to the next hourly window and calls `job.moveToDelayed(nextWindowTimestamp)`.
-- **Ordering Preservation:** Rescheduled jobs retain their BullMQ metadata and resume in order as soon as the quota resets.
-
----
-
-## 🔄 Server Crash & Restart Recovery
-
-The application is engineered to guarantee zero job loss across complete infrastructure restarts:
-
-1. **BullMQ / Redis Persistence:** Delayed jobs reside in Redis sorted sets. With Redis AOF (`appendonly yes`) enabled in `docker-compose.yml`, all pending timers persist to disk.
-2. **Stateless API & Decoupled Workers:** The API server only enqueues jobs; it never executes SMTP calls. If the API server crashes or restarts, the worker continues dispatching seamlessly.
-3. **Worker Reconnect:** When the worker restarts, BullMQ connects to Redis and immediately resumes processing due jobs. No jobs are re-created from scratch on startup.
-
----
-
-## 📂 Project Structure
-
-```
-reachinbox-scheduler/
-├── docker-compose.yml           # PostgreSQL 16 + Redis 7 services
-├── sample_leads.csv             # Demo dataset with valid, invalid, duplicate leads
-├── backend/
-│   ├── prisma/
-│   │   └── schema.prisma        # User, Session, Sender, EmailCampaign, ScheduledEmail
-│   ├── src/
-│   │   ├── config/              # env (Zod), redis (IORedis), logger (Pino), passport
-│   │   ├── controllers/         # auth, email, campaign, sender, dashboard
-│   │   ├── middleware/          # auth, validate (Zod), error handling
-│   │   ├── queues/              # email.queue.ts (BullMQ definitions)
-│   │   ├── repositories/        # database query abstractions
-│   │   ├── routes/              # Express REST endpoints
-│   │   ├── schemas/             # Zod input validation schemas
-│   │   ├── services/            # email, mail (Nodemailer), rate-limit, dashboard
-│   │   ├── workers/             # email.worker.ts (Separate worker process)
-│   │   ├── scripts/             # setup-ethereal.ts
-│   │   ├── __tests__/           # vitest suites (csv, rate-limit, schedule, idempotency)
-│   │   ├── app.ts               # Express app factory
-│   │   └── server.ts            # API server entrypoint
-│   └── package.json
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   │   ├── ui/              # Button, Input, Table, Badge, Modal, StatCard, etc.
-    │   │   ├── layout/          # Sidebar, Header
-    │   │   ├── dashboard/       # QueueHealthCard, RateLimitCard, StatsOverview, RecentEmails
-    │   │   ├── compose/         # CsvImportModal, EmailPreviewTab, SchedulePreviewCard
-    │   │   ├── emails/          # EmailTimeline
-    │   │   └── dev/             # DevTools (Queue & Redis Inspector Drawer)
-    │   ├── hooks/               # useAuth, useKeyboardShortcuts
-    │   ├── pages/               # LoginPage, DashboardPage, ComposePage, ScheduledPage, SentPage, SendersPage, CampaignsPage, SettingsPage
-    │   ├── router/              # Protected & Public routing
-    │   ├── services/            # Typed REST API client
-    │   └── utils/               # csv, date, schedule, cn
-    └── package.json
-```
-
----
-
-## 🚀 Quick Start Guide
-
-### Prerequisites
-- Docker & Docker Compose
-- Node.js 20+ & npm
-
-### 1. Start Infrastructure (PostgreSQL & Redis)
-```bash
-docker compose up -d
-```
-
-### 2. Configure Backend Environment
+Navigate to the `backend` folder:
 ```bash
 cd backend
-cp .env.example .env
 ```
-Generate an Ethereal test SMTP account automatically:
+
+#### Environment Variables (`backend/.env`):
+The repository contains a working `.env` connected to Neon PostgreSQL, Upstash Redis, and Ethereal SMTP:
+```env
+# Database (Neon PostgreSQL)
+DATABASE_URL="postgresql://neondb_owner:npg_1DywzdC8kNYX@ep-super-sound-ayboxlad.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+# Redis (Upstash Redis TLS)
+REDIS_URL="rediss://default:gQAAAAAAAa7kAAIgcDFkMGQ2ZmVkZTk5MDU0NzYyYWFmZDI5MWU4OTUyMzU5OQ@grateful-perch-110308.upstash.io:6379"
+
+# Google OAuth 2.0
+GOOGLE_CLIENT_ID="your_google_client_id"
+GOOGLE_CLIENT_SECRET="your_google_client_secret"
+GOOGLE_CALLBACK_URL="http://localhost:3001/api/auth/google/callback"
+
+# Session & Security
+SESSION_SECRET="reachinbox_super_secret_session_key_64_characters_long_for_security_12345"
+
+# Ethereal Test SMTP
+ETHEREAL_HOST="smtp.ethereal.email"
+ETHEREAL_PORT=587
+ETHEREAL_USER="wuhgbn6tx2ls45yu@ethereal.email"
+ETHEREAL_PASSWORD="Rb7uG7FbDRknx1bwnr"
+
+# Worker Parameters
+WORKER_CONCURRENCY=5
+DEFAULT_EMAIL_DELAY_SECONDS=2
+DEFAULT_HOURLY_LIMIT=50
+MAX_RETRY_ATTEMPTS=3
+
+# Server Config
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL="http://localhost:5173"
+```
+
+#### Setting up fresh Ethereal credentials (Optional):
 ```bash
 npm run setup:ethereal
 ```
-Paste the output `ETHEREAL_USER` and `ETHEREAL_PASSWORD` into `backend/.env`.
 
-### 3. Initialize Database Migrations
+#### Run Database Migrations:
 ```bash
-npm run db:push
+npx prisma db push
 ```
 
-### 4. Run Backend & Background Worker
-Open two terminal tabs:
+#### Start API Server:
 ```bash
-# Terminal 1: API Server
 npm run dev
+```
+*API server will listen on `http://localhost:3001`*
 
-# Terminal 2: BullMQ Email Worker
+#### Start Background Email Worker (in a separate terminal):
+```bash
 npm run worker
 ```
+*BullMQ worker will start listening for scheduled email jobs.*
 
-### 5. Run Frontend
+---
+
+### 3. Frontend Setup
+
+Navigate to the `frontend` folder:
 ```bash
 cd ../frontend
 npm install
 npm run dev
 ```
-Open **`http://localhost:5173`** in your browser.
+Open **[http://localhost:5173](http://localhost:5173)** in your browser.
+
+Click **`🚀 Launch Live Dashboard (Instant Access)`** to enter the workspace immediately.
 
 ---
 
-## 🧪 Automated Testing
+## 🧪 Automated Tests
 
-Run the automated Vitest test suite:
+Run the full automated test suite verifying CSV parsing, rate limits, and idempotency:
 ```bash
 cd backend
 npm test
 ```
-All unit and integration tests verify:
-- Lead CSV header auto-detection, RFC validation, and duplicate removal
-- Schedule completion time calculations across delay and hourly limit constraints
-- Idempotency key uniqueness and safe optimistic state transitions
 
 ---
 
-## ⏱️ 5-Minute Video Demonstration Script
+## 🎥 5-Minute Demo Video Script & Walkthrough
 
-| Timestamp | Screen / Flow | Key Feature Demonstrated |
-|-----------|---------------|--------------------------|
-| **0:00 – 0:45** | `/login` $\rightarrow$ `/dashboard` | Google OAuth 2.0 login, PostgreSQL session persistence, and overview of stats cards. |
-| **0:45 – 1:45** | `/compose` | Select Sender, upload `sample_leads.csv` demonstrating CSV intelligence (17 valid, 3 invalid, 2 duplicates removed). |
-| **1:45 – 2:30** | `/compose` | Write subject/body, toggle **Write / Preview** tab, set Start Time to now + 30s, Delay = 2s, Hourly Limit = 50. Highlight **Dynamic Schedule Preview** calculation. |
-| **2:30 – 3:30** | `/scheduled` & DevTools | Click Schedule. Watch jobs enter BullMQ delayed queue. Open **Queue Inspector** drawer (`Terminal` icon or shortcut) to view live delayed job counts. |
-| **3:30 – 4:15** | `/sent` | Worker processes due jobs. Watch live transition from Scheduled $\rightarrow$ Sent. Click **Open Mail** to inspect the live Ethereal test preview URL. |
-| **4:15 – 5:00** | Server Restart Test | Schedule a future campaign. Stop the worker process (`Ctrl+C`). Wait 10 seconds. Restart worker (`npm run worker`). Prove that Redis retains delayed jobs and delivers without loss. |
+Record a short video (under 5 mins) demonstrating the key flows:
+
+| Step | Time | What to Show on Screen | What to Say / Highlight |
+|---|---|---|---|
+| **1. Login & Dashboard** | `0:00 - 0:45` | Open `http://localhost:5173`, click **"Instant Access"**, show the Dashboard with stats, BullMQ queue health cards, and sliding rate limit gauges. | "Here is the ReachInbox Scheduler with full real-time telemetry, connected to PostgreSQL and Redis." |
+| **2. Compose & CSV Upload** | `0:45 - 1:45` | Go to `/schedule`, select Sender, upload `sample_leads.csv`. Show CSV intelligence reporting valid/invalid/duplicate leads. | "The CSV parser validates emails, removes duplicates, and extracts custom template fields like name and company." |
+| **3. Configure Delays & Preview** | `1:45 - 2:30` | Write subject and body using `{{name}}`, toggle **Write / Preview**, set Start Time to 15s in future, Delay = 2s, Limit = 50. Show **Schedule Preview** table. | "The schedule preview computes exact timestamps taking into account sequential inter-email delays and hourly sender quotas." |
+| **4. Live Queue Dispatch & Sent Mails** | `2:30 - 3:45` | Click **Schedule Campaign**. Navigate to `/scheduled` to watch countdowns. Then visit `/sent` as emails complete. Click **"Open Mail"** on any sent email to show the real Ethereal email rendered in the browser. | "BullMQ processes delayed jobs in real-time. Each dispatched email records its SMTP ID and live Ethereal preview URL." |
+| **5. Server Restart Resilience** | `3:45 - 4:45` | Schedule a campaign starting in 30 seconds. Stop the worker process in terminal (`Ctrl+C`). Wait 10 seconds. Restart `npm run worker`. Watch the worker pick up the exact pending jobs without loss or duplicates. | "Because jobs are stored in Redis sorted sets and tracked idempotently in PostgreSQL, the entire system survives server crashes." |
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+## ⚖️ Assumptions, Shortcuts & Technical Trade-offs
 
-| Shortcut | Description |
-|----------|-------------|
-| <kbd>C</kbd> | Compose new email campaign |
-| <kbd>G</kbd> then <kbd>S</kbd> | Navigate to Scheduled Emails |
-| <kbd>G</kbd> then <kbd>T</kbd> | Navigate to Sent Emails |
-| <kbd>G</kbd> then <kbd>D</kbd> | Navigate to Dashboard |
-| <kbd>?</kbd> | Open Keyboard Shortcuts Modal |
-| <kbd>Esc</kbd> | Close any open modal or drawer |
+1. **Distributed Two-Phase Commit Boundary**:
+   - *Trade-off*: In distributed systems without a distributed 2PC transaction manager across SMTP and SQL, there is a tiny window between SMTP accepting the email and the database recording `SENT`.
+   - *Safeguard*: We use optimistic locking (`SCHEDULED` $\rightarrow$ `PROCESSING`) and deterministic idempotency keys (`campaignId:recipient:seq`). We call this *Effectively-Once Delivery with Idempotency Safeguards*.
+2. **Stateless Upstash Redis vs. Persistent TCP**:
+   - *Choice*: BullMQ requires a persistent TCP connection for blocking commands (`BRPOPLPUSH`). We use the secure TLS endpoint (`rediss://...:6379`) so that BullMQ runs cloud-native with zero local daemon requirements.
+3. **Ethereal vs. Production SMTP**:
+   - *Choice*: Ethereal Email was selected for safe demonstration and grading, providing instant preview URLs for every dispatched email without spamming real inboxes. Production simply requires updating `SMTP_HOST` to Amazon SES, SendGrid, or Resend.
+4. **Sliding Window Hourly Bucketing**:
+   - *Design*: Hourly quotas use Redis atomic Lua scripts with hourly timestamp keys (`ratelimit:sender:{id}:hour:{YYYY-MM-DD-HH}`) and auto-expiring TTLs, ensuring zero race conditions between concurrent worker threads.
+
+---
+
+## 📄 License
+MIT © 2026 ReachInbox Scheduler. Built for ReachInbox.ai Engineering Assessment.
 
 ---
 
@@ -297,3 +269,4 @@ All unit and integration tests verify:
 - **Pino Structured Logging:** Redaction of sensitive fields (`password`, `smtpPass`, `secret`, `GOOGLE_CLIENT_SECRET`).
 - **Separation of Concerns:** Zero SMTP dispatches inside HTTP API route handlers. All dispatch work delegated to isolated BullMQ workers.
 - **Responsive Layout:** Adaptive desktop and mobile layouts with clean collapsible elements and responsive tables.
+
