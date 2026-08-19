@@ -178,6 +178,27 @@ npm run test:chaos
 
 ---
 
+## Assumptions, Shortcuts & Trade-offs
+
+### Assumptions
+- **Ethereal SMTP for demo**: All emails are sent through Ethereal fake SMTP, which captures mail without delivering to real inboxes. This is intentional for safe demonstration — swapping to a production SMTP provider (SendGrid, SES, etc.) requires only changing the transporter config in [`mail.service.ts`](file:///e:/Outbox/backend/src/services/mail.service.ts).
+- **Single Redis instance**: The system assumes a single Redis instance for BullMQ and rate limiting. In production, a Redis Sentinel or Cluster setup would be needed for high availability.
+- **UTC-based scheduling**: While the UI allows timezone selection, all scheduling internally uses UTC timestamps. This simplifies cross-timezone consistency but means the user must trust the frontend's timezone conversion.
+
+### Shortcuts
+- **Demo login bypass**: A 1-click "Demo Login" button is provided alongside real Google OAuth to make evaluation easier. This creates/reuses a seeded demo user and should be removed in production.
+- **No email templating engine**: The compose form accepts raw HTML body. A production system would integrate a template builder (MJML, React Email, etc.).
+- **Session store in PostgreSQL**: Express sessions are stored in PostgreSQL (`connect-pg-simple`) rather than Redis for simplicity. For high-traffic production, Redis-backed sessions would be preferred.
+- **No real-time WebSocket push**: The frontend polls via TanStack Query refetching. A production version could use WebSocket/SSE for live dashboard updates (the backend already emits events via `appEvents`).
+
+### Trade-offs
+- **"Effectively-once" vs exactly-once delivery**: There is an unavoidable window between "SMTP accepted the email" and "PostgreSQL records SENT". If the worker crashes in this window, the email was sent but not recorded. On restart, the idempotency check sees PROCESSING (not SENT), and may re-send. True exactly-once would require an outbox pattern or 2PC, which was deemed over-engineering for this scope.
+- **Rate limiting with INCR/DECR**: The Lua-based rate limiter uses atomic INCR and DECR on hourly keys. If the worker crashes after INCR but before DECR (on a rate-limited rejection), the counter could be slightly inflated. The 2-hour TTL on keys ensures this self-heals.
+- **BullMQ delayed jobs in Redis**: Scheduled emails live as delayed jobs in Redis sorted sets. Redis AOF persistence ensures they survive restarts, but Redis is fundamentally an in-memory store. For millions of scheduled jobs, a database-driven scheduling approach with Redis as a short-horizon buffer would scale better.
+- **Worker concurrency vs throughput**: `WORKER_CONCURRENCY` is set to 5 by default with a 1-second limiter window. This provides controlled throughput but limits burst capacity. The value is configurable via environment variables.
+
+---
+
 ## Environment Variables
 
 ### Backend (`backend/.env`)
