@@ -1,4 +1,5 @@
 # Email Job Scheduler
+eachinbox-scheduler.vercel.app
 
 A full-stack email scheduler service and dashboard built with Express.js, TypeScript, BullMQ, Redis, PostgreSQL, and React.
 
