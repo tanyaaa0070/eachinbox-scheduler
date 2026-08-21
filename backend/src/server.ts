@@ -2,6 +2,7 @@ import { createApp } from './app';
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { prisma } from './lib/prisma';
+import './workers/email.worker';
 
 async function main() {
   const app = createApp();
@@ -16,7 +17,7 @@ async function main() {
   }
 
   app.listen(env.PORT, () => {
-    logger.info({ port: env.PORT, env: env.NODE_ENV }, `🚀 ReachInbox Scheduler API running on port ${env.PORT}`);
+    logger.info({ port: env.PORT, env: env.NODE_ENV }, `🚀 ReachInbox Scheduler API & Worker running on port ${env.PORT}`);
   });
 
   // Graceful shutdown
@@ -34,3 +35,4 @@ main().catch((error) => {
   logger.error({ error }, 'Fatal startup error');
   process.exit(1);
 });
+

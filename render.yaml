@@ -1,5 +1,5 @@
 services:
-  # ── 1. Backend API Service ──
+  # ── 1. Backend API & BullMQ Worker (Combined in 1 Free Web Service) ──
   - type: web
     name: reachinbox-api
     env: node
@@ -29,33 +29,7 @@ services:
       - key: FRONTEND_URL
         sync: false
 
-  # ── 2. Background BullMQ Worker ──
-  - type: worker
-    name: reachinbox-worker
-    env: node
-    plan: free
-    rootDir: backend
-    buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: node dist/workers/email.worker.js
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: ETHEREAL_HOST
-        value: smtp.ethereal.email
-      - key: ETHEREAL_PORT
-        value: "587"
-      - key: ETHEREAL_USER
-        sync: false
-      - key: ETHEREAL_PASSWORD
-        sync: false
-      - key: WORKER_CONCURRENCY
-        value: "5"
-
-  # ── 3. Frontend Static Site ──
+  # ── 2. Frontend Static Site (100% Free) ──
   - type: web
     name: reachinbox-frontend
     env: static
@@ -70,3 +44,4 @@ services:
     envVars:
       - key: VITE_API_URL
         sync: false
+

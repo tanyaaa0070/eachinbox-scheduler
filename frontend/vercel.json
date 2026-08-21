@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://reachinbox-scheduler-api.onrender.com/api/:match*"
+      "destination": "https://disposal-battery-seniors-spirit.trycloudflare.com/api/:match*"
     },
     {
       "source": "/(.*)",
@@ -10,3 +10,5 @@
     }
   ]
 }
+
+

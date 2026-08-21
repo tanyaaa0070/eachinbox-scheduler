@@ -18,6 +18,9 @@ import docsRoutes from './routes/docs.routes';
 export function createApp() {
   const app = express();
 
+  // ── Trust Proxy ──
+  app.set('trust proxy', 1);
+
   // ── Security ──
   app.use(helmet({
     contentSecurityPolicy: false, // Let frontend handle CSP
@@ -25,7 +28,10 @@ export function createApp() {
 
   // ── CORS ──
   app.use(cors({
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server) or from any Vercel / localhost origin
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -51,11 +57,12 @@ export function createApp() {
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       httpOnly: true,
-      secure: env.NODE_ENV === 'production',
+      secure: false, // Allow both http and https for maximum proxy compatibility
       sameSite: 'lax',
     },
     name: 'reachinbox.sid',
   }));
+
 
   // ── Passport ──
   app.use(passport.initialize());

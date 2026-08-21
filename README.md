@@ -2,7 +2,23 @@
 
 A full-stack email scheduler service and dashboard built with Express.js, TypeScript, BullMQ, Redis, PostgreSQL, and React.
 
+## 🌐 Live Deployment & Links
+
+| Service | Live Link | Status |
+| :--- | :--- | :--- |
+| **Frontend Web App (Vercel)** | [https://eachinbox-scheduler.vercel.app](https://eachinbox-scheduler.vercel.app) | 🟢 Live & Connected |
+| **Backend API & Swagger Docs** | [https://disposal-battery-seniors-spirit.trycloudflare.com/api/docs](https://disposal-battery-seniors-spirit.trycloudflare.com/api/docs) | 🟢 Live & Active |
+| **Backend Health Check** | [https://disposal-battery-seniors-spirit.trycloudflare.com/api/health](https://disposal-battery-seniors-spirit.trycloudflare.com/api/health) | 🟢 Healthy (`ok`) |
+| **GitHub Repository** | [https://github.com/tanyaaa0070/eachinbox-scheduler](https://github.com/tanyaaa0070/eachinbox-scheduler) | 🟢 Up to date |
+
+---
+
+
+
+
+
 ## Features
+
 
 ### Backend
 - **Queue-based Scheduling**: Schedules emails using BullMQ delayed jobs backed by Redis (no cron jobs used).
