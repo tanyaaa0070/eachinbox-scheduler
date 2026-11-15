@@ -11,7 +11,7 @@ const envSchema = z.object({
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().default('demo_google_client_id'),
   GOOGLE_CLIENT_SECRET: z.string().default('demo_google_client_secret'),
-  GOOGLE_CALLBACK_URL: z.string().default('http://localhost:3001/api/auth/google/callback'),
+  GOOGLE_CALLBACK_URL: z.string().default('https://eachinbox-scheduler.onrender.com/api/auth/google/callback'),
 
   // Session
   SESSION_SECRET: z.string().default('default-super-secret-session-key-minimum-16-chars'),
@@ -31,7 +31,7 @@ const envSchema = z.object({
   // Server
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+  FRONTEND_URL: z.string().url().default('https://eachinbox-scheduler.vercel.app'),
 });
 
 export type Env = z.infer<typeof envSchema>;
