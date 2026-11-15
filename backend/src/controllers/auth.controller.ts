@@ -20,8 +20,10 @@ export const authController = {
    */
   googleCallback: [
     passport.authenticate('google', { failureRedirect: `${env.FRONTEND_URL}/login?error=auth_failed` }),
-    (_req: Request, res: Response) => {
-      res.redirect(`${env.FRONTEND_URL}/dashboard`);
+    (req: Request, res: Response) => {
+      const user = req.user as any;
+      const tokenParam = user?.id ? `?token=${encodeURIComponent(user.id)}` : '';
+      res.redirect(`${env.FRONTEND_URL}/dashboard${tokenParam}`);
     },
   ],
 
@@ -89,6 +91,7 @@ export const authController = {
           name: user.name,
           email: user.email,
           avatarUrl: user.avatarUrl,
+          token: user.id,
         });
       });
     } catch (error) {
@@ -100,17 +103,26 @@ export const authController = {
    * Get current authenticated user.
    * GET /api/auth/me
    */
-  me(req: Request, res: Response) {
-    if (!req.user) {
+  async me(req: Request, res: Response) {
+    let user = req.user;
+    if (!user) {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : (req.headers['x-user-id'] as string);
+      if (token) {
+        user = ((await prisma.user.findUnique({ where: { id: token } })) as any) ?? undefined;
+      }
+    }
+
+    if (!user) {
       sendError(res, 'UNAUTHORIZED', 'Not authenticated', 401);
       return;
     }
 
     sendSuccess(res, {
-      id: req.user.id,
-      name: req.user.name,
-      email: req.user.email,
-      avatarUrl: req.user.avatarUrl,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
     });
   },
 

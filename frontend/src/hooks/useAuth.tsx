@@ -31,6 +31,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Check if redirected from OAuth callback with token param
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (urlToken) {
+      localStorage.setItem('reachinbox_token', urlToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
     fetchUser();
   }, []);
 
@@ -43,6 +50,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const demoUser = await api.loginDemo();
+      if ((demoUser as any)?.token || demoUser.id) {
+        localStorage.setItem('reachinbox_token', (demoUser as any)?.token || demoUser.id);
+      }
       setUser(demoUser);
     } catch (err) {
       console.error('Demo login error:', err);
@@ -54,10 +64,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await api.logout();
-      setUser(null);
-      window.location.href = '/login';
     } catch (err) {
       console.error('Logout error:', err);
+    } finally {
+      localStorage.removeItem('reachinbox_token');
+      localStorage.removeItem('reachinbox_user');
+      setUser(null);
+      window.location.href = '/login';
     }
   };
 
