@@ -1,0 +1,21 @@
+name,email,company,role
+Oliver Brown,oliver.brown@reachinbox.io,ReachInbox,Product Designer
+Amanda Clark,amanda.clark@domain.io,Acme Corp,Engineering Lead
+Sarah Wilson,sarah.wilson@techstartup.co,ScaleUp,CTO
+John Smith,john.smith@enterprise.org,Global Services,VP Sales
+Invalid Contact,not-a-valid-email,Unknown,N/A
+Oliver Brown,oliver.brown@reachinbox.io,ReachInbox,Duplicate Entry
+David Miller,david.m@cloudinfra.net,CloudStack,DevOps Lead
+Elena Rostova,elena.rostova@ai-labs.com,DeepMind Partner,Research Scientist
+Missing At Sign,bad_format_email.com,None,Associate
+Jessica Taylor,jessica.t@growthmarketing.io,Venture Studio,Growth Director
+Alex Turner,alex.turner@quantum.org,Quantum Labs,Architect
+Sarah Wilson,sarah.wilson@techstartup.co,ScaleUp,Duplicate Entry 2
+Michael Chang,m.chang@fintech-global.com,NeoBank,Principal Engineer
+Rachel Green,rachel.g@retailtech.com,OmniCommerce,Product Manager
+Incomplete,incomplete@domain,None,N/A
+Daniel Craig,daniel.craig@cybersecurity.net,SecOps,Security Engineer
+Sophia Martinez,sophia.m@healthai.io,MedTech,Data Scientist
+Lucas Vance,lucas.v@robotics.co,RoboFlow,Robotics Engineer
+Ava Patel,ava.patel@saascloud.io,HyperScale,VP Engineering
+Ethan Hunt,ethan.hunt@mission.org,Impossible Labs,Special Ops
