@@ -9,18 +9,18 @@ const envSchema = z.object({
   REDIS_URL: z.string().default('redis://localhost:6379'),
 
   // Google OAuth
-  GOOGLE_CLIENT_ID: z.string().min(1),
-  GOOGLE_CLIENT_SECRET: z.string().min(1),
-  GOOGLE_CALLBACK_URL: z.string().url().default('http://localhost:3001/api/auth/google/callback'),
+  GOOGLE_CLIENT_ID: z.string().default('demo_google_client_id'),
+  GOOGLE_CLIENT_SECRET: z.string().default('demo_google_client_secret'),
+  GOOGLE_CALLBACK_URL: z.string().default('http://localhost:3001/api/auth/google/callback'),
 
   // Session
-  SESSION_SECRET: z.string().min(16),
+  SESSION_SECRET: z.string().default('default-super-secret-session-key-minimum-16-chars'),
 
   // Ethereal SMTP
   ETHEREAL_HOST: z.string().default('smtp.ethereal.email'),
   ETHEREAL_PORT: z.coerce.number().default(587),
-  ETHEREAL_USER: z.string().min(1),
-  ETHEREAL_PASSWORD: z.string().min(1),
+  ETHEREAL_USER: z.string().default('ethereal_demo_user@ethereal.email'),
+  ETHEREAL_PASSWORD: z.string().default('ethereal_demo_password'),
 
   // Worker
   WORKER_CONCURRENCY: z.coerce.number().min(1).max(20).default(5),
