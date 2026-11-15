@@ -4,6 +4,20 @@ A full-stack, distributed email scheduling platform and real-time dashboard buil
 
 ---
 
+## 🌐 Live Production Deployment
+
+| Service | URL | Status |
+| :--- | :--- | :--- |
+| **Frontend Web App (Vercel)** | [https://eachinbox-scheduler.vercel.app](https://eachinbox-scheduler.vercel.app) | 🟢 Live & Connected |
+| **Backend API (Render)** | [https://eachinbox-scheduler.onrender.com](https://eachinbox-scheduler.onrender.com) | 🟢 Live & Active |
+| **API Health Check** | [https://eachinbox-scheduler.onrender.com/api/health](https://eachinbox-scheduler.onrender.com/api/health) | 🟢 Healthy (`ok`) |
+| **API Documentation** | [https://eachinbox-scheduler.onrender.com/api/docs](https://eachinbox-scheduler.onrender.com/api/docs) | 🟢 Live Scalar/Swagger Docs |
+| **Database** | Neon Serverless PostgreSQL | 🟢 Cloud Managed |
+| **Queue & Cache** | Upstash Redis TLS | 🟢 Cloud Serverless |
+| **GitHub Repository** | [https://github.com/tanyaaa0070/eachinbox-scheduler](https://github.com/tanyaaa0070/eachinbox-scheduler) | 🟢 Up to Date |
+
+---
+
 ## 🎯 Architecture & Workflow
 
 ```
