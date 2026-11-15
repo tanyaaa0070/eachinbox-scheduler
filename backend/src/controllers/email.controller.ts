@@ -168,7 +168,7 @@ export const emailController = {
    * Public link click tracking redirect.
    * GET /api/emails/track/click/:id
    */
-  async trackClick(req: Request, res: Response, next: NextFunction) {
+  async trackClick(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = req.params['id'] as string;
       const targetUrl = (req.query['url'] as string) || 'https://reachinbox.ai';
@@ -178,12 +178,14 @@ export const emailController = {
       try {
         parsedUrl = new URL(targetUrl);
       } catch {
-        return res.status(400).json({ error: 'Invalid redirect URL' });
+        res.status(400).json({ error: 'Invalid redirect URL' });
+        return;
       }
       
       const allowedProtocols = ['http:', 'https:'];
       if (!allowedProtocols.includes(parsedUrl.protocol)) {
-        return res.status(400).json({ error: 'Invalid redirect URL protocol' });
+        res.status(400).json({ error: 'Invalid redirect URL protocol' });
+        return;
       }
       
       await emailService.trackClick(id, targetUrl);
