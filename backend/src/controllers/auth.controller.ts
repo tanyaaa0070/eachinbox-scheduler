@@ -24,6 +24,7 @@ export const authController = {
 
     return passport.authenticate('google', {
       scope: ['profile', 'email'],
+      prompt: 'select_account',
     })(req, res, next);
   },
 

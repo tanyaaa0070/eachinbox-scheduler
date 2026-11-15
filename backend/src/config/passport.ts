@@ -26,6 +26,24 @@ passport.use(
           create: { googleId, name, email, avatarUrl },
         });
 
+        // Ensure user has a default active sender configured
+        const existingSender = await prisma.sender.findFirst({ where: { userId: user.id } });
+        if (!existingSender) {
+          await prisma.sender.create({
+            data: {
+              userId: user.id,
+              email: env.ETHEREAL_USER,
+              displayName: `${name} (Default Sender)`,
+              smtpHost: env.ETHEREAL_HOST,
+              smtpPort: env.ETHEREAL_PORT,
+              smtpUser: env.ETHEREAL_USER,
+              smtpPass: env.ETHEREAL_PASSWORD,
+              hourlyLimit: env.DEFAULT_HOURLY_LIMIT,
+              isActive: true,
+            },
+          });
+        }
+
         logger.info({ userId: user.id, email: user.email }, 'User authenticated via Google');
         return done(null, user);
       } catch (error) {
