@@ -35,7 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithGoogle = () => {
-    window.location.href = '/api/auth/google';
+    const backendUrl = import.meta.env.VITE_API_URL || 'https://eachinbox-scheduler.onrender.com';
+    window.location.href = `${backendUrl.replace(/\/$/, '')}/api/auth/google`;
   };
 
   const loginAsDemo = async () => {
