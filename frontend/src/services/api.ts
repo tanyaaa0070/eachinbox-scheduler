@@ -11,7 +11,7 @@ import {
   SchedulePreviewResponse 
 } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '') + '/api';
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://eachinbox-scheduler.onrender.com').replace(/\/$/, '') + '/api';
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('reachinbox_token') : null;

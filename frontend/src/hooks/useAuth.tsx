@@ -54,8 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('reachinbox_token', (demoUser as any)?.token || demoUser.id);
       }
       setUser(demoUser);
-    } catch (err) {
+      window.location.href = '/dashboard';
+    } catch (err: any) {
       console.error('Demo login error:', err);
+      alert('Login error: ' + (err?.message || 'Could not connect to backend. Please wait a moment while the server awakens and retry.'));
     } finally {
       setIsLoading(false);
     }
